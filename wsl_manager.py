@@ -1,134 +1,106 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-WSL Manager – Script para administrar distribuciones WSL
-
-Requisitos:
-    - Python 3.x
-    - Tkinter (incluido en la mayoría de instalaciones de Python)
-    
-Pasos previos:
-    1. Crear un entorno virtual:
-         python -m venv env
-         env\Scripts\activate   (en Windows)
-    2. Ejecutar este script desde el entorno virtual.
-
-La aplicación permite:
-    1. Configurar la ruta de exportación (usada en: wsl --export <Distro> <ruta>\distro-ex.tar)
-    2. Configurar la ruta de importación (usada en: wsl --import <Distro> <ruta>\distro <archivo tar>)
-    3. Consultar y guardar la configuración para uso posterior.
-    4. Consultar las distribuciones disponibles en línea (wsl --list --online) e instalarlas.
-    5. Listar las distribuciones instaladas (wsl --list) y ejecutarlas.
-    6. Mover una distribución a otra ubicación usando:
-           wsl --shutdown
-           wsl --export <Distro> <export_path>\<Distro>-ex.tar
-           wsl --unregister <Distro>
-           wsl --import <Distro> <import_path>\<Distro> <export_path>\<Distro>-ex.tar
-
-Consulta la documentación de Microsoft para WSL:
-https://learn.microsoft.com/en-us/windows/wsl/
-"""
-
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
 import subprocess
 import json
 import os
 
-CONFIG_FILE = 'config.json'
+CONFIG_FILE = "config.json"
 
 class WSLManager:
-    def __init__(self, master):
-        self.master = master
-        master.title("WSL Manager")
-        master.geometry("600x400")
-        master.configure(bg="lightblue")
+    def __init__(self, root):
+        self.root = root
+        self.root.title("WSL Manager  v2 - by @GUIRATEC")
+        self.root.geometry("700x320")
         
+        # Cargar la configuración (ruta para exportar)
         self.load_config()
-        self.notebook = ttk.Notebook(master)
-        self.notebook.pack(expand=True, fill='both')
+
+        # Crear el CTkTabview para organizar las secciones
+        self.tabview = ctk.CTkTabview(root, width=580, height=570)
+        self.tabview.pack(padx=10, pady=10, fill="both", expand=True)
+        self.tabview.add("Configuración")
+        self.tabview.add("Instalar Distro")
+        self.tabview.add("Ejecutar Distro")
+        self.tabview.add("Mover Distro")
+        self.tabview.add("Mover Distro desde Archivo Local")
+        self.tabview.add("Eliminar Distro")
         
+        # Crear el contenido de cada pestaña
         self.create_config_tab()
         self.create_install_tab()
         self.create_execute_tab()
         self.create_move_tab()
+        self.create_local_move_tab()
+        self.create_delete_tab()
 
     def load_config(self):
         if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, 'r') as f:
+            with open(CONFIG_FILE, "r") as f:
                 self.config = json.load(f)
         else:
-            self.config = {"export_path": "", "import_path": ""}
+            self.config = {"export_path": ""}
 
     def save_config(self):
-        with open(CONFIG_FILE, 'w') as f:
+        with open(CONFIG_FILE, "w") as f:
             json.dump(self.config, f)
         messagebox.showinfo("Configuración", "¡Configuración guardada exitosamente!")
 
     def create_config_tab(self):
-        self.config_frame = tk.Frame(self.notebook, bg="lightyellow")
-        self.notebook.add(self.config_frame, text="Configuración")
+        tab = self.tabview.tab("Configuración")
         
-        tk.Label(self.config_frame, text="Ruta para exportar distros:", bg="lightyellow", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.export_entry = tk.Entry(self.config_frame, width=50)
+        label_export = ctk.CTkLabel(tab, text="Ruta para exportar distros:")
+        label_export.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        
+        self.export_entry = ctk.CTkEntry(tab, width=350)
         self.export_entry.grid(row=0, column=1, padx=5, pady=5)
         self.export_entry.insert(0, self.config.get("export_path", ""))
-        tk.Button(self.config_frame, text="Seleccionar carpeta", command=self.select_export_folder, bg="darkblue", fg="white").grid(row=0, column=2, padx=5)
         
-        tk.Label(self.config_frame, text="Ruta para importar distros:", bg="lightyellow", font=("Arial", 10, "bold")).grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.import_entry = tk.Entry(self.config_frame, width=50)
-        self.import_entry.grid(row=1, column=1, padx=5, pady=5)
-        self.import_entry.insert(0, self.config.get("import_path", ""))
-        tk.Button(self.config_frame, text="Seleccionar carpeta", command=self.select_import_folder, bg="darkblue", fg="white").grid(row=1, column=2, padx=5)
+        btn_export = ctk.CTkButton(tab, text="Seleccionar carpeta", command=self.select_export_folder)
+        btn_export.grid(row=0, column=2, padx=5, pady=5)
         
-        tk.Button(self.config_frame, text="Guardar Configuración", command=self.update_config, bg="green", fg="white", font=("Arial", 10, "bold")).grid(row=2, column=1, pady=10)
+        btn_save = ctk.CTkButton(tab, text="Guardar Configuración", command=self.update_config)
+        btn_save.grid(row=1, column=1, pady=10)
 
     def select_export_folder(self):
         folder = filedialog.askdirectory()
         if folder:
-            self.export_entry.delete(0, tk.END)
+            self.export_entry.delete(0, "end")
             self.export_entry.insert(0, folder)
-
-    def select_import_folder(self):
-        folder = filedialog.askdirectory()
-        if folder:
-            self.import_entry.delete(0, tk.END)
-            self.import_entry.insert(0, folder)
 
     def update_config(self):
         self.config["export_path"] = self.export_entry.get().replace("\0", "")
-        self.config["import_path"] = self.import_entry.get().replace("\0", "")
         self.save_config()
 
     def create_install_tab(self):
-        self.install_frame = tk.Frame(self.notebook, bg="lightgreen")
-        self.notebook.add(self.install_frame, text="Instalar Distro")
+        tab = self.tabview.tab("Instalar Distro")
         
-        tk.Button(self.install_frame, text="Actualizar lista de distros online", command=self.refresh_online_distros, bg="blue", fg="white").pack(pady=5)
-        self.online_combo = ttk.Combobox(self.install_frame, width=40)
+        btn_refresh_online = ctk.CTkButton(tab, text="Actualizar lista de distros online", command=self.refresh_online_distros)
+        btn_refresh_online.pack(pady=5)
+        
+        self.online_combo = ctk.CTkComboBox(tab, width=300)  # Sin placeholder_text
         self.online_combo.pack(pady=5)
-        tk.Button(self.install_frame, text="Instalar Distro", command=self.install_distro, bg="purple", fg="white").pack(pady=5)
+        self.online_combo.set("")  # Se establece vacío
+        
+        btn_install = ctk.CTkButton(tab, text="Instalar Distro", command=self.install_distro)
+        btn_install.pack(pady=5)
         
         self.online_list = []
         self.refresh_online_distros()
 
     def refresh_online_distros(self):
         try:
-            # Ejecuta el comando y limpia la salida de posibles caracteres nulos
             result = subprocess.run(["wsl", "--list", "--online"], capture_output=True, check=True)
             stdout_clean = result.stdout.decode("utf-8", errors="replace").replace("\0", "")
             lines = stdout_clean.splitlines()
             distros = []
             for line in lines:
-                line_clean = line.replace("\0", "")
-                parts = line_clean.split()
+                parts = line.split()
                 if parts:
-                    # Omitir encabezados (ajusta según la salida)
-                    if parts[0].lower() in ['name', 'distribucion']:
+                    if parts[0].lower() in ["name", "distribucion"]:
                         continue
                     distros.append(parts[0])
             self.online_list = distros
-            self.online_combo['values'] = distros
+            self.online_combo.configure(values=distros)
         except subprocess.CalledProcessError as e:
             err = e.stderr.decode("utf-8", errors="replace").replace("\0", "") if e.stderr else ""
             messagebox.showerror("Error", f"Error al obtener la lista de distros online: {err}")
@@ -136,7 +108,6 @@ class WSLManager:
             messagebox.showerror("Error", f"Error al obtener la lista de distros online: {str(e)}")
 
     def install_distro(self):
-        # Sanitizamos la cadena para eliminar caracteres nulos
         distro = self.online_combo.get().replace("\0", "")
         if not distro:
             messagebox.showwarning("Advertencia", "Seleccione una distro para instalar.")
@@ -152,13 +123,18 @@ class WSLManager:
             messagebox.showerror("Error", f"Error al instalar la distro: {str(e)}")
 
     def create_execute_tab(self):
-        self.execute_frame = tk.Frame(self.notebook, bg="lightcyan")
-        self.notebook.add(self.execute_frame, text="Ejecutar Distro")
+        tab = self.tabview.tab("Ejecutar Distro")
         
-        tk.Button(self.execute_frame, text="Actualizar lista de distros instaladas", command=self.refresh_installed_distros, bg="blue", fg="white").pack(pady=5)
-        self.installed_combo = ttk.Combobox(self.execute_frame, width=40)
+        btn_refresh_installed = ctk.CTkButton(tab, text="Actualizar lista de distros instaladas", command=self.refresh_installed_distros)
+        btn_refresh_installed.pack(pady=5)
+        
+        self.installed_combo = ctk.CTkComboBox(tab, width=300)  # Sin placeholder_text
         self.installed_combo.pack(pady=5)
-        tk.Button(self.execute_frame, text="Ejecutar Distro", command=self.execute_distro, bg="orange", fg="white").pack(pady=5)
+        self.installed_combo.set("")
+        
+        btn_execute = ctk.CTkButton(tab, text="Ejecutar Distro", command=self.execute_distro)
+        btn_execute.pack(pady=5)
+        
         self.refresh_installed_distros()
 
     def refresh_installed_distros(self):
@@ -174,7 +150,7 @@ class WSLManager:
                 distro_name = line_clean.replace("*", "").strip()
                 if distro_name:
                     distros.append(distro_name)
-            self.installed_combo['values'] = distros
+            self.installed_combo.configure(values=distros)
         except subprocess.CalledProcessError as e:
             err = e.stderr.decode("utf-8", errors="replace").replace("\0", "") if e.stderr else ""
             messagebox.showerror("Error", f"Error al obtener la lista de distros instaladas: {err}")
@@ -187,20 +163,38 @@ class WSLManager:
             messagebox.showwarning("Advertencia", "Seleccione una distro para ejecutar.")
             return
         try:
-            # Este comando requiere abrir la terminal de Windows; usamos shell=True para ejecutar la cadena completa.
             cmd = f'start cmd /k wsl -d {distro}'
             subprocess.Popen(cmd, shell=True)
         except Exception as e:
             messagebox.showerror("Error", f"Error al ejecutar la distro: {str(e)}")
 
     def create_move_tab(self):
-        self.move_frame = tk.Frame(self.notebook, bg="lavender")
-        self.notebook.add(self.move_frame, text="Mover Distro")
+        tab = self.tabview.tab("Mover Distro")
         
-        tk.Button(self.move_frame, text="Actualizar lista de distros instaladas", command=self.refresh_installed_distros_move, bg="blue", fg="white").pack(pady=5)
-        self.move_combo = ttk.Combobox(self.move_frame, width=40)
+        btn_refresh_move = ctk.CTkButton(tab, text="Actualizar lista de distros instaladas", command=self.refresh_installed_distros_move)
+        btn_refresh_move.pack(pady=5)
+        
+        self.move_combo = ctk.CTkComboBox(tab, width=300)  # Sin placeholder_text
         self.move_combo.pack(pady=5)
-        tk.Button(self.move_frame, text="Mover Distro", command=self.move_distro, bg="red", fg="white").pack(pady=5)
+        self.move_combo.set("")
+        
+        label_import = ctk.CTkLabel(tab, text="Ruta para importar distros:")
+        label_import.pack(pady=5)
+        
+        self.new_import_entry = ctk.CTkEntry(tab, width=350)
+        self.new_import_entry.pack(pady=5)
+        
+        btn_new_import = ctk.CTkButton(tab, text="Seleccionar carpeta", command=self.select_new_import_folder)
+        btn_new_import.pack(pady=5)
+        
+        btn_move = ctk.CTkButton(tab, text="Mover Distro", command=self.move_distro)
+        btn_move.pack(pady=10)
+
+    def select_new_import_folder(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.new_import_entry.delete(0, "end")
+            self.new_import_entry.insert(0, folder)
 
     def refresh_installed_distros_move(self):
         try:
@@ -215,7 +209,7 @@ class WSLManager:
                 distro_name = line_clean.replace("*", "").strip()
                 if distro_name:
                     distros.append(distro_name)
-            self.move_combo['values'] = distros
+            self.move_combo.configure(values=distros)
         except subprocess.CalledProcessError as e:
             err = e.stderr.decode("utf-8", errors="replace").replace("\0", "") if e.stderr else ""
             messagebox.showerror("Error", f"Error al obtener la lista de distros instaladas: {err}")
@@ -227,10 +221,15 @@ class WSLManager:
         if not distro:
             messagebox.showwarning("Advertencia", "Seleccione una distro para mover.")
             return
+        
         export_path = self.config.get("export_path", "").replace("\0", "")
-        import_path = self.config.get("import_path", "").replace("\0", "")
-        if not export_path or not import_path:
-            messagebox.showwarning("Advertencia", "Configure las rutas de exportación e importación en la pestaña de Configuración.")
+        if not export_path:
+            messagebox.showwarning("Advertencia", "Configure la ruta para exportar distros en la pestaña de Configuración.")
+            return
+        
+        import_path = self.new_import_entry.get().replace("\0", "")
+        if not import_path:
+            messagebox.showwarning("Advertencia", "Seleccione la ruta para importar distros en esta pestaña.")
             return
         
         tar_file = os.path.join(export_path, f"{distro}-ex.tar")
@@ -240,14 +239,141 @@ class WSLManager:
             subprocess.run(["wsl", "--unregister", distro], check=True)
             dest_folder = os.path.join(import_path, distro)
             subprocess.run(["wsl", "--import", distro, dest_folder, tar_file], check=True)
-            messagebox.showinfo("Mover Distro", f"La distro {distro} se movió correctamente.")
+            messagebox.showinfo("Mover Distro", f"La distro {distro} se movió correctamente a la ruta:\n{dest_folder}")
         except subprocess.CalledProcessError as e:
             err = e.stderr.decode("utf-8", errors="replace").replace("\0", "") if e.stderr else ""
             messagebox.showerror("Error", f"Error al mover la distro: {err}")
         except Exception as e:
             messagebox.showerror("Error", f"Error al mover la distro: {str(e)}")
 
+    def create_local_move_tab(self):
+        tab = self.tabview.tab("Mover Distro desde Archivo Local")
+        
+        btn_scan = ctk.CTkButton(tab, text="Buscar archivos exportados", command=self.scan_exported_files)
+        btn_scan.pack(pady=5)
+        
+        self.local_files_combo = ctk.CTkComboBox(tab, width=300)  # Sin placeholder_text
+        self.local_files_combo.pack(pady=5)
+        self.local_files_combo.set("")
+        
+        label_local_import = ctk.CTkLabel(tab, text="Ruta para importar distros:")
+        label_local_import.pack(pady=5)
+        
+        self.local_import_entry = ctk.CTkEntry(tab, width=350)
+        self.local_import_entry.pack(pady=5)
+        
+        btn_local_import = ctk.CTkButton(tab, text="Seleccionar carpeta", command=self.select_local_import_folder)
+        btn_local_import.pack(pady=5)
+        
+        btn_move_local = ctk.CTkButton(tab, text="Mover Distro desde Archivo Local", command=self.move_distro_from_local_file)
+        btn_move_local.pack(pady=10)
+
+    def scan_exported_files(self):
+        export_path = self.config.get("export_path", "").replace("\0", "")
+        if not export_path:
+            messagebox.showwarning("Advertencia", "Configure la ruta para exportar distros en la pestaña de Configuración.")
+            return
+        try:
+            files = [f for f in os.listdir(export_path) if f.lower().endswith("-ex.tar")]
+            if not files:
+                messagebox.showinfo("Información", "No se encontraron archivos exportados en la carpeta.")
+            else:
+                self.local_files_combo.configure(values=files)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al escanear archivos exportados: {str(e)}")
+
+    def select_local_import_folder(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.local_import_entry.delete(0, "end")
+            self.local_import_entry.insert(0, folder)
+
+    def move_distro_from_local_file(self):
+        export_path = self.config.get("export_path", "").replace("\0", "")
+        if not export_path:
+            messagebox.showwarning("Advertencia", "Configure la ruta para exportar distros en la pestaña de Configuración.")
+            return
+        tar_file_name = self.local_files_combo.get().replace("\0", "")
+        if not tar_file_name:
+            messagebox.showwarning("Advertencia", "Seleccione un archivo exportado.")
+            return
+        tar_file = os.path.join(export_path, tar_file_name)
+        import_path = self.local_import_entry.get().replace("\0", "")
+        if not import_path:
+            messagebox.showwarning("Advertencia", "Seleccione la ruta para importar distros en esta pestaña.")
+            return
+        # Derivar el nombre de la distro eliminando el sufijo "-ex.tar"
+        if tar_file_name.lower().endswith("-ex.tar"):
+            distro_name = tar_file_name[:-7]
+        else:
+            distro_name = os.path.splitext(tar_file_name)[0]
+        dest_folder = os.path.join(import_path, distro_name)
+        try:
+            cmd = ["wsl", "--import", distro_name, dest_folder, tar_file]
+            subprocess.run(cmd, check=True)
+            messagebox.showinfo("Mover Distro desde Archivo Local", f"La distro {distro_name} se movió correctamente a la ruta:\n{dest_folder}")
+        except subprocess.CalledProcessError as e:
+            err = e.stderr.decode("utf-8", errors="replace").replace("\0", "") if e.stderr else ""
+            messagebox.showerror("Error", f"Error al mover la distro desde archivo local: {err}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al mover la distro desde archivo local: {str(e)}")
+
+    def create_delete_tab(self):
+        tab = self.tabview.tab("Eliminar Distro")
+        
+        btn_refresh_delete = ctk.CTkButton(tab, text="Actualizar lista de distros instaladas", command=self.refresh_installed_distros_delete)
+        btn_refresh_delete.pack(pady=5)
+        
+        self.delete_combo = ctk.CTkComboBox(tab, width=300)  # Sin placeholder_text
+        self.delete_combo.pack(pady=5)
+        self.delete_combo.set("")
+        
+        btn_delete = ctk.CTkButton(tab, text="Eliminar Distro", command=self.delete_distro)
+        btn_delete.pack(pady=5)
+
+        self.refresh_installed_distros_delete()
+
+    def refresh_installed_distros_delete(self):
+        try:
+            result = subprocess.run(["wsl", "--list"], capture_output=True, check=True)
+            stdout_clean = result.stdout.decode("utf-8", errors="replace").replace("\0", "")
+            lines = stdout_clean.splitlines()
+            distros = []
+            for line in lines:
+                line_clean = line.replace("\0", "")
+                if line_clean.strip() == "" or "Windows Subsystem" in line_clean or "distro" in line_clean.lower():
+                    continue
+                distro_name = line_clean.replace("*", "").strip()
+                if distro_name:
+                    distros.append(distro_name)
+            self.delete_combo.configure(values=distros)
+        except subprocess.CalledProcessError as e:
+            err = e.stderr.decode("utf-8", errors="replace").replace("\0", "") if e.stderr else ""
+            messagebox.showerror("Error", f"Error al obtener la lista de distros instaladas: {err}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al obtener la lista de distros instaladas: {str(e)}")
+
+    def delete_distro(self):
+        distro = self.delete_combo.get().replace("\0", "")
+        if not distro:
+            messagebox.showwarning("Advertencia", "Seleccione una distro para eliminar.")
+            return
+        if not messagebox.askyesno("Confirmar", f"¿Está seguro de eliminar la distro {distro}?"):
+            return
+        try:
+            subprocess.run(["wsl", "--unregister", distro], check=True)
+            messagebox.showinfo("Eliminar Distro", f"La distro {distro} ha sido eliminada.")
+            self.refresh_installed_distros_delete()
+        except subprocess.CalledProcessError as e:
+            err = e.stderr.decode("utf-8", errors="replace").replace("\0", "") if e.stderr else ""
+            messagebox.showerror("Error", f"Error al eliminar la distro: {err}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al eliminar la distro: {str(e)}")
+
 if __name__ == "__main__":
-    root = tk.Tk()
+    ctk.set_appearance_mode("Dark")
+    ctk.set_default_color_theme("blue")
+    
+    root = ctk.CTk()
     app = WSLManager(root)
     root.mainloop()

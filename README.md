@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.6%2B-blue.svg)](https://www.python.org/)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows)
 
-*A powerful graphical interface for managing Windows Subsystem for Linux (WSL) distributions*
+_A powerful graphical interface for managing Windows Subsystem for Linux (WSL) distributions_
 
 Developed by [GUIRATEC](https://github.com/GUIRATEC)
 
@@ -19,12 +19,14 @@ WSL Manager is an Open Source software designed and created by Franklin Gutierre
 ## ✨ Features
 
 - 🔄 **Easy Distribution Management**
+
   - Install new WSL distributions
   - Execute existing distributions
   - Move distributions between locations
   - Delete unwanted distributions
 
 - 📦 **Distribution Backup & Restore**
+
   - Export distributions to backup files
   - Import distributions from local backup files
   - Manage backup locations
@@ -45,11 +47,13 @@ WSL Manager is an Open Source software designed and created by Franklin Gutierre
 ## 🔧 Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/GUIRATEC/wsl_admin.git
    ```
 
 2. Navigate to the project directory:
+
    ```bash
    cd wsl_admin
    ```
@@ -62,6 +66,7 @@ WSL Manager is an Open Source software designed and created by Franklin Gutierre
 ## 💻 Usage
 
 1. Run the application:
+
    ```bash
    python wsl_manager.py
    ```
@@ -85,6 +90,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 👨‍💻 Author
 
 **Franklin Gutierrez**
+
 - CEO & Founder of GUIRATEC
 - GitHub: [@GUIRATEC](https://github.com/GUIRATEC)
 
@@ -92,6 +98,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 <div align="center">
 
-Made with ❤️ by [GUIRATEC](https://github.com/GUIRATEC)
+Made with ❤️ by [Franklin Gutierrez](https://github.com/franklingutierrez)
 
 </div>

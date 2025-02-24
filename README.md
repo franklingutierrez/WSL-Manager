@@ -92,7 +92,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **Franklin Gutierrez**
 
 - CEO & Founder of GUIRATEC
-- GitHub: [@GUIRATEC](https://github.com/GUIRATEC)
+- Web: [@GUIRATEC](https://guiratec.com/)
 
 ---
 

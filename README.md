@@ -16,6 +16,9 @@ Developed by [GUIRATEC](https://github.com/GUIRATEC)
 
 WSL Manager is an Open Source software designed and created by Franklin Gutierrez, CEO and founder of GUIRATEC. This application provides a user-friendly graphical interface for managing Linux subsystems (WSL) directly in Windows, eliminating the need for virtual machines or dual boot setups. WSL Manager enables seamless integration between Windows and Linux, allowing users to leverage tools and applications from both operating systems simultaneously.
 
+![image](https://github.com/user-attachments/assets/026f39c7-cd96-4b75-8b76-4a96a338622c)
+
+
 ## ✨ Features
 
 - 🔄 **Easy Distribution Management**

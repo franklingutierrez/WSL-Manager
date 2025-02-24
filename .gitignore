@@ -9,3 +9,4 @@ ENV/
 dist/
 build/
 *.egg-info/
+wsl_manager.spec

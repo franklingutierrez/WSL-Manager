@@ -2,11 +2,20 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import subprocess
 import json
+import sys
 import os
 
 CONFIG_FILE = "config.json"
 
 
+def resource_path(relative_path):
+    """Obtiene la ruta absoluta al recurso, funcionando tanto en desarrollo como en el ejecutable."""
+    try:
+        # PyInstaller crea una carpeta temporal _MEIPASS donde se ubican los recursos.
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 class WSLManager:
     def __init__(self, root):
         # Configuración del título, geometría y centrado de la ventana
@@ -19,7 +28,7 @@ class WSLManager:
         y = (screen_height - height) // 2
         self.root.geometry(f"{width}x{height}+{x}+{y}")
         # Establecer el icono (archivo wsl.ico en la misma carpeta)
-        self.root.iconbitmap("wsl.ico")
+        self.root.iconbitmap(resource_path("wsl.ico"))
 
         # Cargar la configuración (ruta para exportar)
         self.load_config()
